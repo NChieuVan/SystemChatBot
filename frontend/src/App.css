@@ -1,0 +1,112 @@
+body {
+  font-family: "Inter", sans-serif;
+  background: #f9fcff;
+  margin: 0;
+  color: #222;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  background: #e6f3ff;
+  padding: 10px 20px;
+  align-items: center;
+}
+
+.navbar h2 {
+  color: #e53935;
+}
+.navbar span { color: #0077c2; }
+.nav-links a {
+  margin-left: 15px;
+  text-decoration: none;
+  color: #0077c2;
+}
+
+.chat-container {
+  display: flex;
+  height: 90vh;
+}
+
+.sidebar {
+  width: 25%;
+  background: #e0f2ff;
+  padding: 15px;
+}
+
+.new-chat {
+  background: #90caf9;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chat-window {
+  width: 75%;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  max-width: 60%;
+}
+
+.bot { background: #b3e5fc; align-self: flex-start; }
+.user { background: #90caf9; align-self: flex-end; }
+
+.chat-input {
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  width: 80%;
+}
+
+.send-btn {
+  background: #42a5f5;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 20px;
+  margin-left: 10px;
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 50px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.auth-form input {
+  display: block;
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.auth-form button {
+  background: linear-gradient(to right, #0077c2, #00acc1);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.upload-section {
+  padding: 20px;
+  background: white;
+  margin: 20px;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
