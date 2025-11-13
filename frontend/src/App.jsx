@@ -1,8 +1,8 @@
-
 import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import Chat from "./pages/Chat";
 import Database from "./pages/Database";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import RequireAuth from "./routes/RequireAuth";
 
 export default function App() {
@@ -33,6 +33,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to={authed ? "/chat" : "/login"} replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         <Route element={<RequireAuth />}>
           <Route path="/chat" element={<Chat />} />
