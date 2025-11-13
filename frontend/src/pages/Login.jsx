@@ -34,7 +34,7 @@ export default function Login() {
           <input type="password" placeholder="Mật khẩu" value={p} onChange={(e)=>setP(e.target.value)} />
           {err && <div style={{color: "#ff9aa2", marginBottom: 10}}>{err}</div>}
           <button type="submit">Vào trang chính</button>
-          <div className="note">* Đây là đăng nhập demo (mock). Backend sẽ tích hợp sau.</div>
+          {/* <div className="note">* Đây là đăng nhập demo (mock). Backend sẽ tích hợp sau.</div> */}
         </form>
         <div className="note" style={{marginTop:10}}>
           Chưa có tài khoản? <Link to="/register">Đăng ký tài khoản</Link>
