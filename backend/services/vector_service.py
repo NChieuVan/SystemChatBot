@@ -3,14 +3,16 @@ import uuid
 from sqlalchemy.orm import Session
 import models
 
+
 def get_indexes(db: Session):
     return db.query(models.VectorIndex).order_by(models.VectorIndex.created_at.desc()).all()
 
-def create_index(db: Session, name: str, dimension: int):
-    exists = db.query(models.VectorIndex).filter(models.VectorIndex.name == name).first()
+def create_index(db: Session, name: str, dimension: int,user_id: str):
+    exists = db.query(models.VectorIndex).filter(models.VectorIndex.name == name,
+                                                 models.VectorIndex.user_id ==user_id ).first()
     if exists:
         return None
-    idx = models.VectorIndex(name=name, dimension=dimension, created_at=datetime.utcnow())
+    idx = models.VectorIndex(name=name, dimension=dimension, created_at=datetime.utcnow(), user_id=user_id)
     db.add(idx)
     db.commit()
     db.refresh(idx)
