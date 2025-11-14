@@ -1,9 +1,19 @@
-
 /**
  * Mock Pinecone-like service
  * Schema in localStorage:
  * indexes: [{name, dimension, files: [{id, name, size, uploadedAt}], createdAt}]
  */
+import { getToken } from "./authService";
+
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : 'http://localhost:8000';
+
+function buildUrl(path) {
+  if (!API_BASE) return path;
+  return `${API_BASE.replace(/\/$/, '')}${path}`;
+}
+
 const KEY = "demo_indexes_v1";
 
 function load() {
@@ -13,11 +23,25 @@ function save(idxs) { localStorage.setItem(KEY, JSON.stringify(idxs)); }
 
 export function listIndexes() { return load().sort((a,b)=>a.name.localeCompare(b.name)); }
 
-export function createIndex(name, dimension=1536) {
-  const idxs = load();
-  if (idxs.find(x=>x.name===name)) throw new Error("Index đã tồn tại");
-  const obj = { name, dimension, files: [], createdAt: Date.now() };
-  idxs.push(obj); save(idxs); return obj;
+// Create Index with user dependency token
+
+
+export async function createIndex(name, dimension = 1536) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl("/api/indexes/"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": `Bearer ${token}`
+    },
+    body: new URLSearchParams({ name, dimension }).toString()
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
 }
 
 export function deleteIndex(name) {
