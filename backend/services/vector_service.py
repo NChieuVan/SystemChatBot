@@ -56,8 +56,8 @@ def delete_index(db: Session, name: str, user_id: str):
     db.commit()
     return True
 
-def add_file_metadata(db: Session, index_name: str, filename: str, size_bytes: int = 0):
-    f = models.IndexFile(id=uuid.uuid4(), index_name=index_name, filename=filename, size_bytes=size_bytes, uploaded_at=datetime.utcnow(), status="uploaded")
+def add_file_metadata(db: Session, index_id: str, filename: str, size_bytes: int = 0):
+    f = models.IndexFile(id=uuid.uuid4(), index_id = index_id, filename=filename, size_bytes=size_bytes, uploaded_at=datetime.utcnow(), status="uploaded")
     db.add(f)
     db.commit()
     db.refresh(f)

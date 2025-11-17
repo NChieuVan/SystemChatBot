@@ -65,24 +65,41 @@ export function getIndex(name) {
   return load().find(x=>x.name===name) || null;
 }
 
-export function upsertFile(indexName, file) {
-  const idxs = load();
-  const i = idxs.findIndex(x=>x.name===indexName);
-  if (i===-1) throw new Error("Index không tồn tại");
-  const id = crypto.randomUUID();
-  const size = file?.size || Math.floor(Math.random()*2_000_000)+50_000;
-  idxs[i].files.push({ id, name: file?.name || "demo.txt", size, uploadedAt: Date.now() });
-  save(idxs);
-  return getIndex(indexName);
+export async function upsertFile(indexName, file) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+    const formData = new FormData();
+    formData.append("index_name", indexName);
+    formData.append("file", file);
+    const res = await fetch(buildUrl(`/api/upload/`), {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+    body: formData
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
 }
 
-export function deleteFile(indexName, fileId) {
-  const idxs = load();
-  const i = idxs.findIndex(x=>x.name===indexName);
-  if (i===-1) throw new Error("Index không tồn tại");
-  idxs[i].files = idxs[i].files.filter(f=>f.id!==fileId);
-  save(idxs);
-  return getIndex(indexName);
+
+export async function deleteFile(indexName, fileId) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl(`/api/fileindex/${encodeURIComponent(indexName)}/files/${encodeURIComponent(fileId)}`), {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
 }
 
 // Lấy toàn bộ index của user hiện tại từ backend
@@ -90,6 +107,22 @@ export async function listIndexesFromAPI() {
   const token = getToken();
   if (!token) throw new Error("Bạn chưa đăng nhập.");
   const res = await fetch(buildUrl("/api/indexes/"), {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+export async function listFileInIndex(index_name) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl(`/api/fileindex/${encodeURIComponent(index_name)}/files`), {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`

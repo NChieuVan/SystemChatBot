@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
-from routes import auth, chat, vector, upload
+from routes import auth, chat, vector, upload, fileupload
 
 app = FastAPI(title="AI Chatbot Backend")
 
@@ -20,6 +20,7 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(vector.router)
 app.include_router(upload.router)
+app.include_router(fileupload.router)
 
 @app.get("/")
 def root():
