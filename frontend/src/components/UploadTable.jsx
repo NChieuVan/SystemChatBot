@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Toast from "./Toast";
-import { listIndexesFromAPI, createIndex, deleteIndex, getIndex, upsertFile, deleteFile } from "../services/pineconeMock";
- 
+import { listIndexesFromAPI, createIndex, deleteIndex, getIndex, upsertFile, deleteFile} from "../services/pineconeMock";
+import WaveText from "./WaveText";
 
 export default function UploadTable() {
   const [indexes, setIndexes] = useState([]);
   const [selected, setSelected] = useState("");
-  const [newIdx, setNewIdx] = useState({ name: "", dim: 1536 });
+  const [newIdx, setNewIdx] = useState({ name: "", dim: 356 });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [toastType, setToastType] = useState("success");
+  const [creating, setCreating] = useState(false);
 
   // Load indexes từ backend
   const refresh = async () => {
@@ -31,9 +32,10 @@ export default function UploadTable() {
 
   const handleCreate = async () => {
     if (!newIdx.name.trim()) return alert("Nhập tên index");
+    setCreating(true);
     try {
-      const created = await createIndex(newIdx.name.trim(), Number(newIdx.dim) || 1536);
-      setNewIdx({ name: "", dim: 1536 });
+      const created = await createIndex(newIdx.name.trim(), Number(newIdx.dim) || 356);
+      setNewIdx({ name: "", dim: 356 });
       setToastType("success");
       setMessage(`Tạo index "${created.name}" thành công!`);
       await refresh();
@@ -41,6 +43,8 @@ export default function UploadTable() {
     } catch(e) {
       setToastType("error");
       setMessage(e.message);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -73,7 +77,9 @@ export default function UploadTable() {
         <div className="row">
           <input placeholder="Tên index" value={newIdx.name} onChange={e=>setNewIdx({...newIdx, name: e.target.value})} />
           <input type="number" placeholder="Dimension" value={newIdx.dim} onChange={e=>setNewIdx({...newIdx, dim: e.target.value})} />
-          <button className="primary" onClick={handleCreate} disabled={loading}>Tạo index</button>
+          <button className="primary" onClick={handleCreate} disabled={loading || creating}>
+            {creating ? <WaveText text="Đang tạo..." /> : "Tạo index"}
+          </button>
         </div>
 
         <div className="row">
