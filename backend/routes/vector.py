@@ -4,6 +4,7 @@ from database import get_db
 from services import vector_service
 import schema
 from utils.security import get_current_user
+
 router = APIRouter(prefix="/api/indexes", tags=["Vector"])
 
 @router.get("/", response_model=list[schema.IndexOut])
