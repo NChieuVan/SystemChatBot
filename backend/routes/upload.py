@@ -19,7 +19,7 @@ async def upload_file(index_name: str = Form(...), file: UploadFile = Form(...),
     ).first()
     if not idx:
         raise HTTPException(status_code=404, detail="Index not found in your account")
-    object_name = f"{uuid4()}_{file.filename}"
+    object_name = f"{idx.name}_{file.filename}"
     # upload stream to MinIO
     await run_in_threadpool(
         minio_client.put_object,
