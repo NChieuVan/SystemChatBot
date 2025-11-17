@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Toast from "./Toast";
-import { listIndexesFromAPI, createIndex, deleteIndex, getIndex, upsertFile, deleteFile} from "../services/pineconeMock";
 import WaveText from "./WaveText";
+import { listIndexesFromAPI, createIndex, deleteIndexFromAPI, getIndex, upsertFile, deleteFile } from "../services/pineconeMock";
 
 export default function UploadTable() {
   const [indexes, setIndexes] = useState([]);
@@ -12,6 +12,7 @@ export default function UploadTable() {
   const [message, setMessage] = useState("");
   const [toastType, setToastType] = useState("success");
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load indexes từ backend
   const refresh = async () => {
@@ -51,9 +52,19 @@ export default function UploadTable() {
   const handleDeleteIndex = async () => {
     if (!selected) return;
     if (!confirm(`Xoá index "${selected}"?`)) return;
-    await deleteIndex(selected); // cần sửa deleteIndex để gọi API nếu muốn xoá backend
-    setSelected("");
-    await refresh();
+    setDeleting(true);
+    try {
+      await deleteIndexFromAPI(selected);
+      setToastType("success");
+      setMessage(`Đã xoá index "${selected}" thành công!`);
+      setSelected("");
+      await refresh();
+    } catch(e) {
+      setToastType("error");
+      setMessage(e.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleUpload = () => {
@@ -87,7 +98,9 @@ export default function UploadTable() {
             <option value="">-- Chọn index --</option>
             {indexes.map(ix => <option key={ix.id || ix.name} value={ix.name}>{ix.name}</option>)}
           </select>
-          <button className="danger" onClick={handleDeleteIndex} disabled={!selected || loading}>Xoá index</button>
+          <button className="danger" onClick={handleDeleteIndex} disabled={!selected || loading || deleting}>
+            {deleting ? <WaveText text="Đang xoá..." /> : "Xoá index"}
+          </button>
         </div>
 
         <table className="table">
@@ -114,7 +127,7 @@ export default function UploadTable() {
       </div>
 
       <div className="card section">
-        <h3>Dữ liệu trong Index</h3>
+        <h3>Dữ liệu trong Index <span style={{ color: 'green' }}>&quot;{selected}&quot;</span></h3>
         <div className="row">
           <input type="file" onChange={(e)=>setFile(e.target.files?.[0] || null)} />
           <button onClick={handleUpload} className="primary">Thêm vào index</button>
