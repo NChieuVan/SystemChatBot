@@ -48,6 +48,7 @@ export function deleteIndex(name) {
   save(load().filter(x=>x.name!==name));
 }
 
+// 
 export function getIndex(name) {
   return load().find(x=>x.name===name) || null;
 }
@@ -70,4 +71,21 @@ export function deleteFile(indexName, fileId) {
   idxs[i].files = idxs[i].files.filter(f=>f.id!==fileId);
   save(idxs);
   return getIndex(indexName);
+}
+
+// Lấy toàn bộ index của user hiện tại từ backend
+export async function listIndexesFromAPI() {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl("/api/indexes/"), {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
 }

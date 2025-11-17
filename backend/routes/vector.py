@@ -7,8 +7,8 @@ from utils.security import get_current_user
 router = APIRouter(prefix="/api/indexes", tags=["Vector"])
 
 @router.get("/", response_model=list[schema.IndexOut])
-def list_indexes(db: Session = Depends(get_db)):
-    return vector_service.get_indexes(db)
+def list_indexes(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return vector_service.get_indexes(db, user_id=str(current_user.id))
 
 @router.post("/", response_model=schema.IndexOut)
 def create_index(name: str = Form(...), dimension: int = Form(1536), db: Session = Depends(get_db),current_user=Depends(get_current_user)):

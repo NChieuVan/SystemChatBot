@@ -7,3 +7,4 @@ minio
 passim[bcrypt]
 python-jose
 pydantic[email]
+langchain-pinecone==0.2.8

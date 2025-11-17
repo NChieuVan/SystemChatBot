@@ -1,11 +1,21 @@
 from datetime import datetime
 import uuid
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,relationship
 import models
 
 
-def get_indexes(db: Session):
-    return db.query(models.VectorIndex).order_by(models.VectorIndex.created_at.desc()).all()
+def get_indexes(db: Session, user_id: str):
+    # return db.query(models.VectorIndex).filter(models.VectorIndex.user_id == uuid.UUID(user_id)).all()
+    indexes = db.query(models.VectorIndex).filter(models.VectorIndex.user_id == user_id).all()
+    return [
+    {
+        "id": str(idx.id),
+        "name": idx.name,
+        "dimension": idx.dimension,
+        "created_at": idx.created_at
+    } for idx in indexes
+    ]
+
 
 def create_index(db: Session, name: str, dimension: int,user_id: str):
     exists = db.query(models.VectorIndex).filter(models.VectorIndex.name == name,

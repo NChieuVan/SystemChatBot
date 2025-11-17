@@ -1,72 +1,85 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel as PydanticBaseModel, EmailStr
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 
-# -------------------- USER --------------------
+
+# ============================
+# Base model
+# ============================
+class BaseModel(PydanticBaseModel):
+    class Config:
+        orm_mode = True
+
+
+# ============================
+# USER
+# ============================
 class UserBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
 
+
 class UserCreate(UserBase):
     password: str
 
+
 class UserOut(UserBase):
-    id: str
+    id: UUID
     created_at: datetime
-    class Config:
-        orm_mode = True
 
 
-# -------------------- MESSAGE --------------------
+# ============================
+# MESSAGE
+# ============================
 class MessageBase(BaseModel):
     role: str
     content: str
 
+
 class MessageOut(MessageBase):
-    id: str
+    id: UUID
     created_at: datetime
-    class Config:
-        orm_mode = True
 
 
-# -------------------- CHAT --------------------
+# ============================
+# CHAT
+# ============================
 class ChatBase(BaseModel):
     title: Optional[str] = "New chat"
     model: Optional[str] = "gpt-4o"
 
+
 class ChatOut(ChatBase):
-    id: str
+    id: UUID
     created_at: datetime
     messages: Optional[List[MessageOut]] = []
-    class Config:
-        orm_mode = True
 
 
-# -------------------- VECTOR INDEX --------------------
+# ============================
+# VECTOR INDEX
+# ============================
 class IndexFileOut(BaseModel):
-    id: str
+    id: UUID
     filename: str
     size_bytes: int
     uploaded_at: datetime
     status: str
-    class Config:
-        orm_mode = True
+
 
 class IndexOut(BaseModel):
-    id: str
+    id: UUID
     name: str
     dimension: int
     created_at: datetime
     files: Optional[List[IndexFileOut]] = []
-    class Config:
-        orm_mode = True
 
 
-# -------------------- METADATA --------------------
+# ============================
+# METADATA
+# ============================
 class MetadataOut(BaseModel):
-    id: str
+    id: UUID
     key: str
     value: Optional[str]
     created_at: datetime
-    class Config:
-        orm_mode = True
