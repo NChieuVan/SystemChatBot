@@ -44,10 +44,22 @@ export async function createIndex(name, dimension = 1536) {
 }
 
 
-export function deleteIndex(name) {
-  save(load().filter(x=>x.name!==name));
+// Xóa index đã chọn qua backend
+export async function deleteIndexFromAPI(name) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl(`/api/indexes/${encodeURIComponent(name)}`), {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    let err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
 }
-
 // 
 export function getIndex(name) {
   return load().find(x=>x.name===name) || null;
@@ -89,3 +101,5 @@ export async function listIndexesFromAPI() {
   }
   return res.json();
 }
+
+
