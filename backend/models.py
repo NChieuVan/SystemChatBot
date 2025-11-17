@@ -53,6 +53,7 @@ class VectorIndex(Base):
     name = Column(String(255), unique=True, nullable=False)
     dimension = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(String(50), default="none")
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     user = relationship("User", back_populates="vector_indexes")
