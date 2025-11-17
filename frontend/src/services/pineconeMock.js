@@ -23,9 +23,8 @@ function save(idxs) { localStorage.setItem(KEY, JSON.stringify(idxs)); }
 
 export function listIndexes() { return load().sort((a,b)=>a.name.localeCompare(b.name)); }
 
+
 // Create Index with user dependency token
-
-
 export async function createIndex(name, dimension = 1536) {
   const token = getToken();
   if (!token) throw new Error("Bạn chưa đăng nhập.");
@@ -43,6 +42,7 @@ export async function createIndex(name, dimension = 1536) {
   }
   return res.json();
 }
+
 
 export function deleteIndex(name) {
   save(load().filter(x=>x.name!==name));
