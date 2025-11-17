@@ -40,11 +40,19 @@ def create_index(db: Session, name: str, dimension: int,user_id: str):
     db.refresh(idx)
     return idx
 
-def delete_index(db: Session, name: str):
-    idx = db.query(models.VectorIndex).filter(models.VectorIndex.name == name).first()
-    if not idx:
+def delete_index(db: Session, name: str, user_id: str):
+    """Delete index by name and user_id.
+    - Returns True if deleted, \n\tFalse if not found.
+    """
+    exists = db.query(models.VectorIndex).filter(models.VectorIndex.name == name,
+                                              models.VectorIndex.user_id == user_id).first()
+    if not exists:
         return False
-    db.delete(idx)
+    # Delete from Pinecone
+    result =  pinecone_service.delete_pinecone_index(name)
+    if result.get("status") != "deleted":
+        return False
+    db.delete(exists)
     db.commit()
     return True
 
@@ -61,4 +69,5 @@ def delete_file(db: Session, file_id: str):
         return False
     db.delete(f)
     db.commit()
+    
     return True

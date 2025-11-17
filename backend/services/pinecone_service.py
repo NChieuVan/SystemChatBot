@@ -32,3 +32,12 @@ def create_pinecone_index(index_name: str, dimension: int):
     except Exception as e:
         print("Error creating Pinecone index:", e)
         return {"status": "error", "error": str(e)}
+    
+def delete_pinecone_index(index_name: str):
+    """Delete Pinecone index by name."""
+    try:
+        pc.delete_index(name=index_name)
+        return {"status": "deleted"}
+    except Exception as e:
+        print("Error deleting Pinecone index:", e)
+        return {"status": "error", "error": str(e)}

@@ -26,8 +26,10 @@ def create_index(name: str = Form(...), dimension: int = Form(1536), db: Session
     return index
 
 @router.delete("/{name}")
-def delete_index(name: str, db: Session = Depends(get_db)):
-    ok = vector_service.delete_index(db, name)
-    if not ok:
+def delete_index(name: str, db: Session = Depends(get_db),current_user=Depends(get_current_user)):
+    if not name or not name.strip():
+        raise HTTPException(status_code=422, detail="Tên index không được để trống.")
+    result = vector_service.delete_index(db, name, user_id=str(current_user.id))
+    if not result:
         raise HTTPException(status_code=404, detail="Index not found")
     return {"message": "Index deleted"}
