@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 from sqlalchemy.orm import Session,relationship
 import models
-
+from services import pinecone_service
 
 def get_indexes(db: Session, user_id: str):
     # return db.query(models.VectorIndex).filter(models.VectorIndex.user_id == uuid.UUID(user_id)).all()
@@ -22,8 +22,20 @@ def create_index(db: Session, name: str, dimension: int,user_id: str):
                                                  models.VectorIndex.user_id ==user_id ).first()
     if exists:
         return None
-    idx = models.VectorIndex(name=name, dimension=dimension, created_at=datetime.utcnow(), user_id=user_id)
+    idx = models.VectorIndex(name=name, 
+                             dimension=dimension, 
+                             created_at=datetime.utcnow(), 
+                             user_id=user_id, 
+                             status="creating")
     db.add(idx)
+    db.commit()
+    db.refresh(idx)
+    # Create index in Pinecone
+    result = pinecone_service.create_pinecone_index(name, dimension)
+    if result.get("status") == "ready":
+        idx.status = "ready"
+    else:
+        idx.status = "error"
     db.commit()
     db.refresh(idx)
     return idx
