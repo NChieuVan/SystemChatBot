@@ -1,7 +1,9 @@
 from pinecone import Pinecone, ServerlessSpec
 import os
 from dotenv import load_dotenv
-
+from typing import List
+from langchain.schema import Document
+from langchain_pinecone import PineconeVectorStore
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -40,4 +42,73 @@ def delete_pinecone_index(index_name: str):
         return {"status": "deleted"}
     except Exception as e:
         print("Error deleting Pinecone index:", e)
+        return {"status": "error", "error": str(e)}
+# Updata to Pinecone API
+def up_data_vectors(index_name: str, documents:List[Document], model_embedding) -> dict:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        docments (List[Document]): List of Document objects to be upserted.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+    - Returns:
+        dict: Status of the upsert operation."""
+    try:
+        document_search = PineconeVectorStore.from_documents(
+            documents =documents,
+            embedding=model_embedding,
+            index_name=index_name,
+            pinecone_client=pc
+        )
+    except Exception as e:
+        print("Error upserting vectors to Pinecone index:", e)
+        return {"status": "error", "error": str(e)}
+
+#Load data from Pinecone index
+def load_vectors(index_name: str, model_embedding) -> PineconeVectorStore:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+    - Returns:
+        PineconeVectorStore: The loaded Pinecone vector store."""
+    try:
+        vector_store = PineconeVectorStore.from_existing_index(
+            index_name=index_name,
+            embedding=model_embedding,
+            pinecone_client=pc
+        )
+        return vector_store
+    except Exception as e:
+        print("Error loading vectors from Pinecone index:", e)
+        raise Exception(str(e))
+    
+def retrieve_documents(index_name: str, model_embedding, top_k: int = 5) -> List[Document]:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+        top_k (int): Number of top similar documents to retrieve.
+    """
+    try:
+        vector_store = load_vectors(index_name, model_embedding)
+        similar_docs = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
+        return similar_docs
+    except Exception as e:
+        print("Error retrieving similar documents from Pinecone index:", e)
+        raise Exception(str(e))
+    
+def add_more_documents(index_name: str, documents: List[Document], model_embedding) -> dict:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        documents (List[Document]): List of Document objects to be added.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+    - Returns:
+        dict: Status of the add operation."""
+    try:
+        vector_store = load_vectors(index_name, model_embedding)
+        vector_store.add_documents(documents)
+        return {"status": "added"}
+    except Exception as e:
+        print("Error adding documents to Pinecone index:", e)
         return {"status": "error", "error": str(e)}
