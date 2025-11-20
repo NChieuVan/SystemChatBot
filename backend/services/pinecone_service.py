@@ -170,3 +170,18 @@ def delete_documents(index_name: str, ids: List[str], model_embedding) -> dict:
     except Exception as e:
         print("Error deleting documents from Pinecone index:", e)
         return {"status": "error", "error": str(e)}
+
+def delete_vectors_by_ids(index_name: str, ids: List[str]) -> dict:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        ids (List[str]): List of vector IDs to be deleted.
+    - Returns:
+        dict: Status of the delete operation."""
+    try:
+        index = pc.Index(name=index_name)
+        index.delete(ids=ids)
+        return {"status": "deleted"}
+    except Exception as e:
+        print("Error deleting vectors from Pinecone index:", e)
+        return {"status": "error", "error": str(e)}
