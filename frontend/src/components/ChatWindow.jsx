@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { getChat, sendMessage, setModel, createChat } from "../services/chatMock";
 
@@ -13,18 +12,25 @@ export default function ChatWindow({ chatId, onNeedChat }) {
   const [chat, setChat] = useState(null);
   const model = chat?.model || MODELS[0].id;
 
-  useEffect(()=>{
-    if (chatId) {
-      setChat(getChat(chatId));
-    } else {
-      const c = createChat(MODELS[0].id);
-      onNeedChat?.(c.id);
-      setChat(c);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Load chat không tạo chat mới, khi nào click new chat thì mới tạo
+  useEffect(() => {
+    const loadChat = async () => {
+      if (!chatId) {
+        setChat(null);
+        return;
+      }
+      try {
+        const data = await getChat(chatId);
+        setChat(data);
+      } catch (e) {
+        console.error("Load chat error:", e);
+        setChat(null);
+      }
+    };
+    loadChat();
   }, [chatId]);
 
-  const messages = useMemo(()=> chat?.messages || [], [chat]);
+  const messages = useMemo(() => chat?.messages || [], [chat]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -34,10 +40,11 @@ export default function ChatWindow({ chatId, onNeedChat }) {
     setInput("");
   };
 
-  const changeModel = (e) => {
+  const changeModel = async (e) => {
     if (!chat) return;
-    setModel(chat.id, e.target.value);
-    setChat(getChat(chat.id));
+    await setModel(chat.id, e.target.value);
+    const data = await getChat(chat.id);
+    setChat(data);
   };
 
   return (

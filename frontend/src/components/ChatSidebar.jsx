@@ -1,50 +1,138 @@
-
 import { useEffect, useState } from "react";
-import { listChats, createChat, deleteChat, renameChat } from "../services/chatMock";
+import { listChatsByUser, createChat, deleteChat, renameChat } from "../services/chatMock";
 
 export default function ChatSidebar({ currentId, onSelect }) {
   const [chats, setChats] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [tempTitle, setTempTitle] = useState("");
 
-  const refresh = () => setChats(listChats());
-  useEffect(()=>{ refresh(); }, []);
+  // Load danh sách chat từ backend
+  const refresh = async (keepSelection = false) => {
+    try {
+      const list = await listChatsByUser();
+      setChats(list);
 
-  const handleNew = () => {
-    const c = createChat();
-    refresh();
-    onSelect?.(c.id);
+      // Nếu chưa chọn chat thì chọn cái đầu tiên
+      if (!keepSelection && !currentId && list.length > 0) {
+        onSelect(list[0].id);
+      }
+    } catch (e) {
+      console.error("Load chats error:", e);
+      setChats([]);
+    }
   };
-  const handleDelete = (id) => {
-    if (!confirm("Xoá đoạn chat này?")) return;
-    deleteChat(id); refresh();
-    if (id===currentId && chats.length>0) onSelect?.(chats[0]?.id);
+
+  useEffect(() => {
+    refresh(true);
+  }, []);
+
+  // Tạo chat mới
+  const handleNew = async () => {
+    try {
+      const chat = await createChat();
+      await refresh(true);
+      onSelect(chat.id);
+    } catch (e) {
+      alert(e.message || "Tạo chat mới thất bại");
+    }
   };
-  const startEdit = (c) => { setEditingId(c.id); setTempTitle(c.title); };
-  const saveEdit = (id) => { renameChat(id, tempTitle || "Untitled"); setEditingId(null); refresh(); };
+
+  // Xoá chat
+  const handleDelete = async (id) => {
+    if (!confirm("Bạn chắc chắn muốn xoá đoạn chat này?")) return;
+
+    try {
+      await deleteChat(id);
+
+      const list = await listChatsByUser();
+      setChats(list);
+
+      // Nếu vừa xoá chat hiện tại → chọn cái tiếp theo
+      if (id === currentId) {
+        onSelect(list.length ? list[0].id : null);
+      }
+    } catch (e) {
+      alert(e.message || "Xoá chat thất bại");
+    }
+  };
+
+  // Lưu tên chat sau khi sửa
+  const saveEdit = async (id) => {
+    try {
+      await renameChat(id, tempTitle || "Untitled");
+      setEditingId(null);
+      refresh(true);
+    } catch (e) {
+      alert(e.message || "Đổi tên thất bại");
+    }
+  };
 
   return (
     <div className="card sidebar">
       <button className="new-chat" onClick={handleNew}>+ New chat</button>
+
       <h3>Chats</h3>
+
       <div>
         {chats.map(c => (
-          <div key={c.id} className="chat-item" onClick={()=>onSelect?.(c.id)} style={{borderColor: c.id===currentId ? "#4d66b3" : undefined}}>
-            <div style={{display:"flex", flexDirection:"column"}}>
-              {editingId===c.id ? (
-                <input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} onBlur={()=>saveEdit(c.id)} onKeyDown={e=>e.key==="Enter"&&saveEdit(c.id)} />
+          <div
+            key={c.id}
+            className="chat-item"
+            onClick={() => onSelect(c.id)}
+            style={{
+              borderColor: c.id === currentId ? "#4d66b3" : undefined,
+              background: c.id === currentId ? "#eef3ff" : "transparent",
+              transition: "0.15s"
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+              {editingId === c.id ? (
+                <input
+                  value={tempTitle}
+                  autoFocus
+                  onChange={e => setTempTitle(e.target.value)}
+                  onBlur={() => saveEdit(c.id)}
+                  onKeyDown={e => e.key === "Enter" && saveEdit(c.id)}
+                />
               ) : (
                 <span className="title">{c.title}</span>
               )}
-              <span className="meta">{new Date(c.createdAt).toLocaleString()}</span>
+
+              <span className="meta">
+                {c.created_at ? new Date(c.created_at).toLocaleString() : ""}
+              </span>
             </div>
-            <div>
-              {editingId!==c.id && <button onClick={(e)=>{e.stopPropagation(); startEdit(c);}}>✎</button>}
-              <button onClick={(e)=>{e.stopPropagation(); handleDelete(c.id);}}>🗑</button>
+
+            <div style={{ display: "flex", gap: 4 }}>
+              {editingId !== c.id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingId(c.id);
+                    setTempTitle(c.title);
+                  }}
+                >
+                  ✎
+                </button>
+              )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(c.id);
+                }}
+              >
+                🗑
+              </button>
             </div>
           </div>
         ))}
-        {chats.length===0 && <div className="chat-item"><span className="title">Chưa có chat</span></div>}
+
+        {chats.length === 0 && (
+          <div className="chat-item">
+            <span className="title">Chưa có chat</span>
+          </div>
+        )}
       </div>
     </div>
   );
