@@ -100,6 +100,7 @@ def get_file_of_index(db: Session, index_id: str, file_name: str):
 
 
 
+# embedding_file service
 def embedding_file(db: Session, index, file_obj):
     """
     - Lấy file từ MinIO
@@ -108,40 +109,36 @@ def embedding_file(db: Session, index, file_obj):
     - Upsert lên Pinecone
     - Lưu vector_ids vào FileVectorMap
     """
-   
-    # 1. Lấy file từ MinIO
     pre = Preprocessor()
-    # print("embedding_file called:", index.name, file_obj.filename)
     docs = pre.load_pdf_from_minio(f"{index.name}_{file_obj.filename}")
-    # print("Type of docs:", type(docs))
-    # print("Docs value:", docs)
     if not docs:
         raise Exception("Không đọc được file từ MinIO hoặc file rỗng")
+    
     split_docs = pre.split_documents(docs)
     if not split_docs:
         raise Exception("Không tách được nội dung file")
-    # 2. Embedding (ví dụ: dùng OpenAIEmbeddings)
-    try:
-        model_embedding = embedding_model
-    except Exception:
-        model_embedding = None
+    
+    model_embedding = embedding_model or None
     if not model_embedding:
         raise Exception("Không khởi tạo được model embedding")
-    # 3. Upsert lên Pinecone
-    result = up_data_vectors(index.name, split_docs, model_embedding)
-    # 4. Lưu vector_ids vào FileVectorMap (giả sử result trả về ids)
+    
+    # Upsert lên Pinecone
+    result = up_data_vectors(index.name, split_docs, model_embedding, user_id=str(index.user_id), file_name=file_obj.filename)
+    if result.get("status") != "upserted":
+        raise Exception("Lỗi khi upsert vectors lên Pinecone: " + result.get("error", "Unknown error"))
+    
+    # Lưu vector_ids vào FileVectorMap
     vector_ids = result.get("vector_ids", [])
-    print("Vector IDs:", vector_ids)
+    if not vector_ids:
+        raise Exception("Không có vector_ids trả về từ Pinecone")
+    
     save_file_vector_map(db, str(file_obj.id), str(index.id), vector_ids)
-    try:
-        if not vector_ids:
-            raise Exception("Không có vector_ids trả về từ Pinecone")
-    except Exception as e:
-        raise Exception(f"Lỗi khi lưu FileVectorMap: {str(e)}")
-    # 5. Cập nhật trạng thái file
-    file_obj.status = "embedded"
-    db.commit()
-    return result
+
+    # KHÔNG commit file_obj ở đây, chỉ trả về result
+    return {"status": result.get("status")}
+
+    
+
 
 
 

@@ -45,7 +45,7 @@ def embedding_file(index_name: str, file_name: str, db: Session = Depends(get_db
     file_obj = vector_service.get_file_of_index(db, index_id=str(index.id), file_name=file_name)
     if not file_obj:
         raise HTTPException(status_code=404, detail="File not found in the specified index")
-    print("---- Embedding file: "+str(file_obj.filename)+" ----" +str(file_obj.status)+" ----")
+    
     if file_obj.status == "embedded":
         return {"file_name": file_name, "status": "embedded", "message": "File đã được nhúng!"}
     
@@ -53,8 +53,13 @@ def embedding_file(index_name: str, file_name: str, db: Session = Depends(get_db
     try:
         result = vector_service.embedding_file(db, index, file_obj)
         # Sau khi embedding thành công, cập nhật trạng thái file
-        file_obj.status = "embedded"
-        db.commit()
+        # Update status ở đây, route commit
+        if result.get("status") == "upserted":
+            file_obj.status = "embedded"
+            db.add(file_obj)  # đảm bảo session theo dõi object
+            db.commit()
+            db.refresh(file_obj)
         return {"file_name": file_name, "status": "embedded", "message": "Nhúng dữ liệu thành công!", "detail": result}
     except Exception as e:
+        db.rollback()
         return {"file_name": file_name, "status": "error", "message": str(e)}

@@ -14,7 +14,7 @@ import {
 export default function UploadTable() {
   const [indexes, setIndexes] = useState([]);
   const [selected, setSelected] = useState("");
-  const [newIdx, setNewIdx] = useState({ name: "", dim: 356 });
+  const [newIdx, setNewIdx] = useState({ name: "", dim: 1536 });
   const [file, setFile] = useState(null);
 
   const [loading, setLoading] = useState(false);
@@ -91,8 +91,8 @@ export default function UploadTable() {
     if (!newIdx.name.trim()) return alert("Nhập tên index");
     setCreating(true);
     try {
-      const created = await createIndex(newIdx.name.trim(), Number(newIdx.dim) || 356);
-      setNewIdx({ name: "", dim: 356 });
+      const created = await createIndex(newIdx.name.trim(), Number(newIdx.dim) || 1536);
+      setNewIdx({ name: "", dim: 1536 });
       setToastType("success");
       setMessage(`Tạo index "${created.name}" thành công!`);
 

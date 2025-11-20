@@ -44,29 +44,64 @@ def delete_pinecone_index(index_name: str):
         print("Error deleting Pinecone index:", e)
         return {"status": "error", "error": str(e)}
 # Updata to Pinecone API
-def up_data_vectors(index_name: str, documents:List[Document], model_embedding) -> dict:
+def up_data_vectors(index_name: str, documents: List[Document], model_embedding, user_id: str, file_name: str) -> dict:
+    # """
+    # - Args:
+    #     index_name (str): Name of the Pinecone index.
+    #     docments (List[Document]): List of Document objects to be upserted.
+    #     model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+    # - Returns:
+    #     dict: {"status": "upserted", "vector_ids": [...] } or {"status": "error", "error": str}
+    # """
+    # version old
+    # try:
+    #     document_search = PineconeVectorStore.from_documents(
+    #         documents=documents,
+    #         embedding=model_embedding,
+    #         index_name=index_name,
+    #     )
+    #     # Lấy danh sách vector_ids vừa upsert
+    
+    #     vector_ids = []
+    #     if hasattr(document_search, 'added_ids'):
+    #         vector_ids = document_search.added_ids
+    #     elif hasattr(document_search, 'ids'):
+    #         vector_ids = document_search.ids
+    #     # Trả về status và vector_ids
+    #     return {"status": "upserted", "vector_ids": vector_ids}
+    # except Exception as e:
+    #     print("Error upserting vectors to Pinecone index:", e)
+    #     return {"status": "error", "error": str(e), "vector_ids": []}
+
+    # New version
     """
-    - Args:
-        index_name (str): Name of the Pinecone index.
-        docments (List[Document]): List of Document objects to be upserted.
-        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
-    - Returns:
-        dict: Status of the upsert operation."""
+    Upsert vectors to Pinecone, tạo ID riêng cho mỗi document.
+
+    Args:
+        index_name (str): Tên index Pinecone.
+        documents (List[Document]): List các Document cần upsert.
+        model_embedding: Embedding model (OpenAIEmbeddings, HuggingFaceEmbeddings,...)
+        user_id (str): ID người dùng, để đảm bảo ID vector unique
+        file_name (str): Tên file, để tạo ID vector duy nhất
+
+    Returns:
+        dict: {"status": "upserted", "vector_ids": [...] } hoặc {"status": "error", "error": str}
+    """
     try:
-        document_search = PineconeVectorStore.from_documents(
-            documents=documents,
+        # Tạo vector_ids duy nhất cho từng document
+        vector_ids = [f"{user_id}_{file_name}_{i}" for i in range(len(documents))]
+
+        # Upsert lên Pinecone, truyền ids
+        PineconeVectorStore.from_texts(
+            texts=[d.page_content for d in documents],
+            metadatas=[{"source": d.metadata.get("source", ""), "page": d.metadata.get("page", "")} for d in documents],    
             embedding=model_embedding,
             index_name=index_name,
+            ids=vector_ids
         )
-        # Lấy danh sách vector_ids vừa upsert
-    
-        vector_ids = []
-        if hasattr(document_search, 'added_ids'):
-            vector_ids = document_search.added_ids
-        elif hasattr(document_search, 'ids'):
-            vector_ids = document_search.ids
-        # Trả về status và vector_ids
+
         return {"status": "upserted", "vector_ids": vector_ids}
+
     except Exception as e:
         print("Error upserting vectors to Pinecone index:", e)
         return {"status": "error", "error": str(e), "vector_ids": []}
