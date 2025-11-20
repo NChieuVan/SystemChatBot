@@ -38,6 +38,7 @@ async def delete_file_from_index(index_name: str, file_id: str, db: Session = De
         models.VectorIndex.name == index_name.strip(),
         models.VectorIndex.user_id == current_user.id
     ).first()
+
     if not idx:
         raise HTTPException(status_code=404, detail="Index not found in your account")
     
@@ -50,25 +51,32 @@ async def delete_file_from_index(index_name: str, file_id: str, db: Session = De
         raise HTTPException(status_code=404, detail="File not found in the specified index")
     # Delete file from MinIO
     try:
-        await run_in_threadpool(
+        result = await run_in_threadpool(
             minio_client.remove_object,
             MINIO_BUCKET,
             f"{idx.name}_{file.filename}"
         )
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete file from storage: {e}")
+    
+    # Check if status file is uploaded then delete database, if status is embedded then query models.FileVectorMap and delete vectors from Pinecone and database
+    if file.status == "uploaded":
+        # Just delete metadata from DB
+        db.delete(file)
+        db.commit()
+        return {"detail": "File deleted successfully"}
+    # else status is embedded
     # Delete FileVectorMap
     vectors_map = db.query(models.FileVectorMap).filter(
         models.FileVectorMap.file_id == str(file.id),
         models.FileVectorMap.index_id == str(idx.id)
     ).first()
+
     # check and delele ids Pinecone
     if not vectors_map:
         raise HTTPException(status_code=404, detail="FileVectorMap not found for the specified file and index")
     vector_ids = vectors_map.vector_ids
-    try:
-        
+    try:    
         result = delete_vectors_by_ids(idx.name, vector_ids)
         if result.get("status") != "deleted":
             raise HTTPException(status_code=500, detail="Failed to delete vectors from Pinecone")
