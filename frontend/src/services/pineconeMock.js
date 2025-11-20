@@ -136,3 +136,21 @@ export async function listFileInIndex(index_name) {
 }
 
 
+
+// Gọi API embedding file
+export async function embedFileToIndex(indexName, fileName) {
+  const token = getToken();
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+  const res = await fetch(buildUrl(`/api/indexes/${encodeURIComponent(indexName)}/${encodeURIComponent(fileName)}`), {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || res.statusText);
+  }
+  return data;
+}

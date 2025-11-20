@@ -54,14 +54,22 @@ def up_data_vectors(index_name: str, documents:List[Document], model_embedding) 
         dict: Status of the upsert operation."""
     try:
         document_search = PineconeVectorStore.from_documents(
-            documents =documents,
+            documents=documents,
             embedding=model_embedding,
             index_name=index_name,
-            pinecone_client=pc
         )
+        # Lấy danh sách vector_ids vừa upsert
+    
+        vector_ids = []
+        if hasattr(document_search, 'added_ids'):
+            vector_ids = document_search.added_ids
+        elif hasattr(document_search, 'ids'):
+            vector_ids = document_search.ids
+        # Trả về status và vector_ids
+        return {"status": "upserted", "vector_ids": vector_ids}
     except Exception as e:
         print("Error upserting vectors to Pinecone index:", e)
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": str(e), "vector_ids": []}
 
 #Load data from Pinecone index
 def load_vectors(index_name: str, model_embedding) -> PineconeVectorStore:
@@ -75,7 +83,6 @@ def load_vectors(index_name: str, model_embedding) -> PineconeVectorStore:
         vector_store = PineconeVectorStore.from_existing_index(
             index_name=index_name,
             embedding=model_embedding,
-            pinecone_client=pc
         )
         return vector_store
     except Exception as e:
@@ -111,4 +118,20 @@ def add_more_documents(index_name: str, documents: List[Document], model_embeddi
         return {"status": "added"}
     except Exception as e:
         print("Error adding documents to Pinecone index:", e)
+        return {"status": "error", "error": str(e)}
+
+def delete_documents(index_name: str, ids: List[str], model_embedding) -> dict:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        ids (List[str]): List of document IDs to be deleted.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+    - Returns:
+        dict: Status of the delete operation."""
+    try:
+        vector_store = load_vectors(index_name, model_embedding)
+        vector_store.delete(ids)
+        return {"status": "deleted"}
+    except Exception as e:
+        print("Error deleting documents from Pinecone index:", e)
         return {"status": "error", "error": str(e)}

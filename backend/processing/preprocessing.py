@@ -4,6 +4,7 @@ from typing import List
 from langchain.schema import Document
 from minio_client import minio_client, MINIO_BUCKET
 from io import BytesIO
+import tempfile
 class Preprocessor:
     def __init__(self,chunk_size:int=1000,chunk_overlap:int=200):
         self.chunk_size = chunk_size
@@ -17,11 +18,23 @@ class Preprocessor:
     
     def load_pdf_from_minio(self, object_name: str) -> List[Document]:
         """Load PDF directly from MinIO as Documents."""
-        response = minio_client.get_object(MINIO_BUCKET, object_name)
-        pdf_bytes = response.read()
-        loader = PyPDFLoader(file_path=BytesIO(pdf_bytes))
-        documents = loader.load()
-        return documents
+        
+        print(f"[Preprocessor] Loading from MinIO: bucket={MINIO_BUCKET}, object={object_name}")
+        try:
+            response = minio_client.get_object(MINIO_BUCKET, object_name)
+            pdf_bytes = response.read()
+            print(f"[Preprocessor] Bytes loaded: {len(pdf_bytes)}")
+            # Lưu ra file tạm
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                tmp_file.write(pdf_bytes)
+                tmp_path = tmp_file.name
+            loader = PyPDFLoader(file_path=tmp_path)
+            documents = loader.load()
+            print(f"[Preprocessor] Documents loaded: {len(documents)}")
+            return documents
+        except Exception as e:
+            print(f"[Preprocessor] Error loading PDF from MinIO: {e}")
+            return []
     
     def filler_short_documents(self,docuemnts:List[Document]) -> List[Document]:
         """Fill short documents to meet the minimum length requirement."""

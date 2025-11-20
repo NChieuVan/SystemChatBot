@@ -1,3 +1,4 @@
+
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey
@@ -5,6 +6,19 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 
+
+# -------------------- FILE VECTOR MAP --------------------
+from sqlalchemy import JSON
+
+class FileVectorMap(Base):
+    __tablename__ = "file_vector_maps"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_id = Column(UUID(as_uuid=True), ForeignKey("index_files.id", ondelete="CASCADE"), nullable=False)
+    index_id = Column(UUID(as_uuid=True), ForeignKey("vector_indexes.id", ondelete="CASCADE"), nullable=False)
+    vector_ids = Column(JSON, nullable=False)  # List of vector/document ids
+
+    file = relationship("IndexFile")
+    index = relationship("VectorIndex")
 # -------------------- USER --------------------
 class User(Base):
     __tablename__ = "users"

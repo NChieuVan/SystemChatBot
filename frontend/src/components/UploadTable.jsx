@@ -7,7 +7,8 @@ import {
   deleteIndexFromAPI, 
   upsertFile, 
   deleteFile,
-  listFileInIndex 
+  listFileInIndex,
+  embedFileToIndex
 } from "../services/pineconeMock";
 
 export default function UploadTable() {
@@ -186,13 +187,29 @@ export default function UploadTable() {
       return;
     }
 
+    // Kiểm tra trạng thái file
+    if (selectedFile.status === "embedded") {
+      setToastType("info");
+      setMessage("File đã được nhúng!");
+      return;
+    }
+
     setEmbedding(true);
     try {
-      // TODO: Replace with real API
-      await upsertFile(selected, selectedFile);
-
+      // Gọi API embedding
+      await embedFileToIndex(selected, selectedFile.filename || selectedFile.name);
       setToastType("success");
-      setMessage(`Nhúng dữ liệu file "${selectedFile.filename}" thành công!`);
+      setMessage(`Nhúng dữ liệu file "${selectedFile.filename || selectedFile.name}" thành công!`);
+
+      // Reload lại danh sách file để cập nhật trạng thái embedded
+      const backendFiles = await listFileInIndex(selected);
+      setIndexes(prev =>
+        prev.map(ix =>
+          ix.name === selected
+            ? { ...ix, files: backendFiles }
+            : ix
+        )
+      );
 
     } catch (e) {
       setToastType("error");
@@ -300,20 +317,18 @@ export default function UploadTable() {
 
         <div className="row">
           <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-
-          <button onClick={handleUpload} className="primary"  disabled={uploading}>
+          <button onClick={handleUpload} className="primary" disabled={uploading}>
             {uploading ? <WaveText text="Đang upload..." /> : "Thêm vào index"}
           </button>
-
           <button 
             onClick={handeEmbedding} 
             className={`embed-btn ${selectedFile ? "active" : "inactive"}`}
             disabled={!selectedFile || embedding}
+            style={{ marginLeft: 12 }}
           >
             {embedding ? <WaveText text="Đang nhúng..." /> : "Nhúng dữ liệu"}
           </button>
         </div>
-
         <table className="table">
           <thead>
             <tr>

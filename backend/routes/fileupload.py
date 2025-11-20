@@ -62,3 +62,4 @@ async def delete_file_from_index(index_name: str, file_id: str, db: Session = De
     db.commit()
     
     return {"detail": "File deleted successfully"}
+

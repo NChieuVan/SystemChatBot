@@ -33,3 +33,28 @@ def delete_index(name: str, db: Session = Depends(get_db),current_user=Depends(g
     if not result:
         raise HTTPException(status_code=404, detail="Index not found")
     return {"message": "Index deleted"}
+
+# recive file and status
+@router.post("/{index_name}/{file_name}")
+def embedding_file(index_name: str, file_name: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if not index_name or not index_name.strip():
+        raise HTTPException(status_code=422, detail="Tên index không được để trống.")
+    index = vector_service.get_index_by_name(db, index_name.strip(), user_id=str(current_user.id))
+    if not index:
+        raise HTTPException(status_code=404, detail="Index not found")
+    file_obj = vector_service.get_file_of_index(db, index_id=str(index.id), file_name=file_name)
+    if not file_obj:
+        raise HTTPException(status_code=404, detail="File not found in the specified index")
+    print("---- Embedding file: "+str(file_obj.filename)+" ----" +str(file_obj.status)+" ----")
+    if file_obj.status == "embedded":
+        return {"file_name": file_name, "status": "embedded", "message": "File đã được nhúng!"}
+    
+    # Thực hiện embedding (preprocess, embedding, upsert Pinecone)
+    try:
+        result = vector_service.embedding_file(db, index, file_obj)
+        # Sau khi embedding thành công, cập nhật trạng thái file
+        file_obj.status = "embedded"
+        db.commit()
+        return {"file_name": file_name, "status": "embedded", "message": "Nhúng dữ liệu thành công!", "detail": result}
+    except Exception as e:
+        return {"file_name": file_name, "status": "error", "message": str(e)}
