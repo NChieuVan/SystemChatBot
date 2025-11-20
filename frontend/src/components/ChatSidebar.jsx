@@ -81,7 +81,7 @@ export default function ChatSidebar({ currentId, onSelect }) {
             onClick={() => onSelect(c.id)}
             style={{
               borderColor: c.id === currentId ? "#4d66b3" : undefined,
-              background: c.id === currentId ? "#eef3ff" : "transparent",
+              background: c.id === currentId ? "#60a4ad9a" : "transparent",
               transition: "0.15s"
             }}
           >
