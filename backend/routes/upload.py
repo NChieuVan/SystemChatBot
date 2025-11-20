@@ -21,16 +21,18 @@ async def upload_file(index_name: str = Form(...), file: UploadFile = Form(...),
         raise HTTPException(status_code=404, detail="Index not found in your account")
     object_name = f"{idx.name}_{file.filename}"
     # upload stream to MinIO
-    await run_in_threadpool(
-        minio_client.put_object,
-        MINIO_BUCKET,
-        object_name,
-        file.file,
-        length=-1,
-        content_type=file.content_type or "application/octet-stream",
-        part_size=10 * 1024 * 1024,
-        )
-
+    try:
+        await run_in_threadpool(
+            minio_client.put_object,
+            MINIO_BUCKET,
+            object_name,
+            file.file,
+            length=-1,
+            content_type=file.content_type or "application/octet-stream",
+            part_size=10 * 1024 * 1024,
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload file to storage: {str(e)}")
     # Caculate file size
     file.file.seek(0, 2)  # Move to end of file
     size_bytes = file.file.tell()

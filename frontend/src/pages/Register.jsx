@@ -9,6 +9,8 @@ export default function Register() {
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
   const nav = useNavigate();
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -16,6 +18,14 @@ export default function Register() {
     setSuccess("");
     if (!email || !password) {
       setErr("Vui lòng nhập email và mật khẩu.");
+      return;
+    }
+    if (!emailRegex.test(email)) {
+      setErr("Email không hợp lệ.");
+      return;
+    }
+    if (!strongPasswordRegex.test(password)) {
+      setErr("Mật khẩu yếu. Vui lòng sử dụng ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
       return;
     }
     try {

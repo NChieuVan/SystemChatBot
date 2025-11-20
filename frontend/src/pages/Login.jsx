@@ -10,11 +10,20 @@ export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
   const from = loc.state?.from?.pathname || "/chat";
-
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const submit = async(e) => {
     e.preventDefault();
     if(!u || !p) {
       setErr("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+    if (!emailRegex.test(u)) {
+      setErr("Email không hợp lệ.");
+      return;
+    }
+    if (!strongPasswordRegex.test(p)) {
+      setErr("Mật khẩu yếu. Vui lòng sử dụng ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
       return;
     }
     try {
