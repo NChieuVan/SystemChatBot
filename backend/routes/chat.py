@@ -18,13 +18,18 @@ def create_chat(model: str = Form("gpt-4o"), db: Session = Depends(get_db), curr
     return chat_service.create_chat(db, model, user_id=str(current_user.id))
 
 @router.post("/{chat_id}/messages", response_model=schema.ChatOut)
-def send_message(chat_id: str, content: str = Form(...), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    # Lưu message vào DB như cũ
-    chat = chat_service.send_message(db, chat_id, content)
+def send_message(chat_id: str, content: str = Form(...),index_name = Form(...) ,db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    user_id = str(current_user.id)
+    # Lấy index_name nếu cần (ví dụ lấy theo user hoặc chat, hoặc truyền từ frontend)
+    # Ux click index_name từ frontend
+    index_name = index_name.strip()
+    if not index_name:
+        raise HTTPException(status_code=422, detail="Index name cannot be empty")
+    # Gọi agent để lấy AI response thực tế
+    chat = chat_service.send_message_with_agent(db, chat_id, content, user_id=user_id, index_name=index_name)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
     # Lưu memory vào Redis
-    user_id = str(current_user.id)
     messages = [
         {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat()} for m in chat.messages
     ]

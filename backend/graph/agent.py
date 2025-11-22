@@ -1,15 +1,11 @@
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, Annotated, Sequence, Optional
+from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, ToolMessage,AIMessage
 from operator import add as add_messages
-from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.tools import tool
 from openAI import llm
-from langgraph.prompts import system_prompt
-from langgraph.tools import tools_dict, tools
+from graph.prompts import system_prompt
+from graph.tools import tools_dict
+from services.chat_service import get_chat_memory
 
 # Define the structure of the agent's state chat bot with AI model, for web multi users with database Pinecone
 class AgentState(TypedDict):
@@ -18,14 +14,6 @@ class AgentState(TypedDict):
 
     Mỗi user có thể có nhiều cửa sổ chat khác nhau.
     Mỗi cửa sổ chat tương ứng với 1 agent model + memory riêng.
-
-    Fields:
-        messages: Lịch sử hội thoại (LangGraph tự merge với add_messages)
-        # index_name: Pinecone index dùng để retrieve
-        # user_id: ID người dùng
-        # chat_id: ID cửa sổ chat (thay vì message_id)
-        # last_user_message: Tin nhắn cuối cùng user gửi
-        # last_ai_message: Tin nhắn cuối cùng AI trả lời
     """
     messages: Annotated[Sequence[BaseMessage], add_messages]
     
@@ -39,16 +27,22 @@ def should_continue(state: AgentState) -> bool:
     last_message = state["messages"][-1]
     return hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0
 
-def call_llm(state: AgentState) -> AgentState:
+def call_llm(state: AgentState, user_id=None, chat_id=None, index_name=None) -> AgentState:
     """
-        Call LLM with current state messages.
-
-        - Returns:
-        AIMessage(content="...",
-        tool_calls= [{"id": "tool_call_1", name": "retriever_tool", "args": { dict}}]
-        }])
+        Call LLM with current state messages + memory từ Redis.
     """
     messages = list(state["messages"])
+    # Lấy memory từ Redis nếu có user_id và chat_id
+    if user_id and chat_id:
+        memory = get_chat_memory(user_id, chat_id)
+        # Chuyển memory thành list BaseMessage
+        memory_msgs = []
+        for m in memory:
+            if m["role"] == "user":
+                memory_msgs.append(HumanMessage(content=m["content"]))
+            elif m["role"] == "assistant":
+                memory_msgs.append(AIMessage(content=m["content"]))
+        messages = memory_msgs + messages
     messages = [SystemMessage(content=system_prompt)] + messages
     response = llm.invoke(messages)
     return {"messages": [response]}
@@ -88,4 +82,3 @@ agent = graph.compile()
 
 
 
-    

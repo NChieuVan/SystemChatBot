@@ -8,8 +8,14 @@ passim[bcrypt]
 python-jose
 pydantic[email]
 langchain-pinecone==0.2.8
-langchain==0.3.26
 pypdf==5.6.1
-langchain-community==0.3.26
-langchain-huggingface==0.3.1
-langgraph
+# Các package langchain đồng bộ với langgraph >=1.0.3
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.1.0
+langchain-huggingface>=0.1.0
+langchain-openai>=0.1.0
+langgraph>=1.0.3
+openai
+redis
+pinecone-client
