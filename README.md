@@ -109,17 +109,5 @@ Hệ thống ChatBot hỗ trợ quản lý index, upload file, embedding dữ li
 ---
 File này mô tả chi tiết chức năng, luồng hoạt động và cách sử dụng hệ thống SystemChatBot.
 
-Delete database
 
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-        EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' RESTART IDENTITY CASCADE';
-    END LOOP;
-END;
-$$;
-
-psql -U postgres -d chatbot
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getChat, sendMessage, setModel, createChat } from "../services/chatMock";
+import { listIndexesFromAPI } from "../services/pineconeMock";
 
 const MODELS = [
   { id: "gpt-4o", label: "GPT-4o" },
@@ -10,6 +11,8 @@ const MODELS = [
 export default function ChatWindow({ chatId, onNeedChat }) {
   const [input, setInput] = useState("");
   const [chat, setChat] = useState(null);
+  const [indexes, setIndexes] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState("");
   const model = chat?.model || MODELS[0].id;
 
   // Load chat không tạo chat mới, khi nào click new chat thì mới tạo
@@ -30,12 +33,16 @@ export default function ChatWindow({ chatId, onNeedChat }) {
     loadChat();
   }, [chatId]);
 
+  useEffect(() => {
+    listIndexesFromAPI().then(setIndexes).catch(() => setIndexes([]));
+  }, []);
+
   const messages = useMemo(() => chat?.messages || [], [chat]);
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !chat) return;
-    const updated = await sendMessage(chat.id, "user", text);
+    if (!text || !chat || !selectedIndex) return;
+    const updated = await sendMessage(chat.id, text, selectedIndex);
     setChat(updated);
     setInput("");
   };
@@ -54,13 +61,16 @@ export default function ChatWindow({ chatId, onNeedChat }) {
         <select value={model} onChange={changeModel} className="model-select">
           {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
+        <span className="badge" style={{marginLeft:16}}>Index</span>
+        <select value={selectedIndex} onChange={e=>setSelectedIndex(e.target.value)} className="model-select">
+          <option value="">-- Chọn index --</option>
+          {indexes.map(idx => <option key={idx.id} value={idx.name}>{idx.name}</option>)}
+        </select>
       </div>
 
       <div className="messages">
         {messages.map((m,i)=>(
-          <div key={i} className={"bubble " + (m.role==="user" ? "from-user" : "from-bot")}>
-            {m.content}
-          </div>
+          <div key={i} className={"bubble " + (m.role==="user" ? "from-user" : "from-bot")}>{m.content}</div>
         ))}
         {messages.length===0 && (
           <div className="bubble from-bot">Chào bạn! Hãy nhập câu hỏi để bắt đầu.</div>

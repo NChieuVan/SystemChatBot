@@ -98,8 +98,8 @@ export async function getChat(id) {
 }
 
 
-// Gửi message trong 1 chat
-export async function sendMessage(id, role, content) {
+// Gửi message trong 1 chat, truyền thêm index_name
+export async function sendMessage(id, content, indexName) {
   const token = getToken();
   const res = await fetch(buildUrl(`/api/chats/${encodeURIComponent(id)}/messages`), {
     method: "POST",
@@ -107,7 +107,7 @@ export async function sendMessage(id, role, content) {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ content }).toString(),
+    body: new URLSearchParams({ content, index_name: indexName }).toString(),
   });
 
   if (!res.ok) {

@@ -4,7 +4,7 @@ sqlalchemy
 psycopg2-binary
 python-dotenv
 minio
-passim[bcrypt]
+passlib[bcrypt]
 python-jose
 pydantic[email]
 langchain-pinecone==0.2.8

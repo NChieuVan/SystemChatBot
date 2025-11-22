@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { listChatsByUser, createChat, deleteChat, renameChat } from "../services/chatMock";
+import { listIndexesFromAPI } from "../services/pineconeMock";
 
-export default function ChatSidebar({ currentId, onSelect }) {
+export default function ChatSidebar({ currentId, onSelect, onIndexSelect }) {
   const [chats, setChats] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [tempTitle, setTempTitle] = useState("");
+  const [indexes, setIndexes] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState("");
 
   // Load danh sách chat từ backend
   const refresh = async (keepSelection = false) => {
@@ -24,6 +27,8 @@ export default function ChatSidebar({ currentId, onSelect }) {
 
   useEffect(() => {
     refresh(true);
+    // Load indexes
+    listIndexesFromAPI().then(setIndexes).catch(() => setIndexes([]));
   }, []);
 
   // Tạo chat mới
@@ -68,71 +73,86 @@ export default function ChatSidebar({ currentId, onSelect }) {
   };
 
   return (
-    <div className="card sidebar">
-      <button className="new-chat" onClick={handleNew}>+ New chat</button>
-
-      <h3>Chats</h3>
-
-      <div>
-        {chats.map(c => (
-          <div
-            key={c.id}
-            className="chat-item"
-            onClick={() => onSelect(c.id)}
-            style={{
-              borderColor: c.id === currentId ? "#4d66b3" : undefined,
-              background: c.id === currentId ? "#60a4ad9a" : "transparent",
-              transition: "0.15s"
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-              {editingId === c.id ? (
-                <input
-                  value={tempTitle}
-                  autoFocus
-                  onChange={e => setTempTitle(e.target.value)}
-                  onBlur={() => saveEdit(c.id)}
-                  onKeyDown={e => e.key === "Enter" && saveEdit(c.id)}
-                />
-              ) : (
-                <span className="title">{c.title}</span>
-              )}
-
-              <span className="meta">
-                {c.created_at ? new Date(c.created_at).toLocaleString() : ""}
-              </span>
-            </div>
-
-            <div style={{ display: "flex", gap: 4 }}>
-              {editingId !== c.id && (
+    <div className="card sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ flex: 7, overflowY: "auto", minHeight: 0 }}>
+        <button className="new-chat" onClick={handleNew}>+ New chat</button>
+        <h3>Chats</h3>
+        <div>
+          {chats.map(c => (
+            <div
+              key={c.id}
+              className="chat-item"
+              onClick={() => onSelect(c.id)}
+              style={{
+                borderColor: c.id === currentId ? "#4d66b3" : undefined,
+                background: c.id === currentId ? "#60a4ad9a" : "transparent",
+                transition: "0.15s"
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                {editingId === c.id ? (
+                  <input
+                    value={tempTitle}
+                    autoFocus
+                    onChange={e => setTempTitle(e.target.value)}
+                    onBlur={() => saveEdit(c.id)}
+                    onKeyDown={e => e.key === "Enter" && saveEdit(c.id)}
+                  />
+                ) : (
+                  <span className="title">{c.title}</span>
+                )}
+                <span className="meta">
+                  {c.created_at ? new Date(c.created_at).toLocaleString() : ""}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {editingId !== c.id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingId(c.id);
+                      setTempTitle(c.title);
+                    }}
+                  >
+                    ✎
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditingId(c.id);
-                    setTempTitle(c.title);
+                    handleDelete(c.id);
                   }}
                 >
-                  ✎
+                  🗑
                 </button>
-              )}
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(c.id);
-                }}
-              >
-                🗑
-              </button>
+              </div>
             </div>
-          </div>
+          ))}
+          {chats.length === 0 && (
+            <div className="chat-item">
+              <span className="title">Chưa có chat</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ flex: 3, overflowY: "auto", minHeight: 0, borderTop: "1px solid #eee", padding: 8 }}>
+        <h4>Chọn index</h4>
+        {indexes.map(idx => (
+          <label key={idx.id} style={{ display: "block", marginBottom: 4 }}>
+            <input
+              type="radio"
+              name="index-radio"
+              value={idx.name}
+              checked={selectedIndex === idx.name}
+              onChange={() => {
+                setSelectedIndex(idx.name);
+                onIndexSelect?.(idx.name);
+              }}
+            />
+            {idx.name}
+          </label>
         ))}
-
-        {chats.length === 0 && (
-          <div className="chat-item">
-            <span className="title">Chưa có chat</span>
-          </div>
-        )}
+        {indexes.length === 0 && <div>Chưa có index</div>}
       </div>
     </div>
   );
