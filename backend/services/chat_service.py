@@ -3,6 +3,9 @@ from datetime import datetime
 from sqlalchemy.orm import Session,selectinload
 import models
 from fastapi import HTTPException
+from utils.redis_client import redis_client
+import json
+
 def get_all_chats(db: Session,user_id: str):
     chats = db.query(models.Chat).filter(models.Chat.user_id == user_id).options(selectinload(models.Chat.messages)).all()
     return chats 
@@ -51,5 +54,18 @@ def rename_chat(db: Session, chat_id: str, title: str, user_id: str):
     db.commit()
     db.refresh(chat)
     return chat
+
+# Lưu lịch sử chat vào Redis theo user_id và chat_id
+# Key: f"chat_memory:{user_id}:{chat_id}"
+def save_chat_memory(user_id: str, chat_id: str, messages: list):
+    key = f"chat_memory:{user_id}:{chat_id}"
+    redis_client.set(key, json.dumps(messages), ex=60*60*24)  # TTL 1 ngày
+
+def get_chat_memory(user_id: str, chat_id: str):
+    key = f"chat_memory:{user_id}:{chat_id}"
+    data = redis_client.get(key)
+    if data:
+        return json.loads(data)
+    return []
 
 

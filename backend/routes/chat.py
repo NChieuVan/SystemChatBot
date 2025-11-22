@@ -18,10 +18,17 @@ def create_chat(model: str = Form("gpt-4o"), db: Session = Depends(get_db), curr
     return chat_service.create_chat(db, model, user_id=str(current_user.id))
 
 @router.post("/{chat_id}/messages", response_model=schema.ChatOut)
-def send_message(chat_id: str, content: str = Form(...), db: Session = Depends(get_db)):
+def send_message(chat_id: str, content: str = Form(...), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    # Lưu message vào DB như cũ
     chat = chat_service.send_message(db, chat_id, content)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
+    # Lưu memory vào Redis
+    user_id = str(current_user.id)
+    messages = [
+        {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat()} for m in chat.messages
+    ]
+    chat_service.save_chat_memory(user_id, chat_id, messages)
     return chat
 
 @router.delete("/{chat_id}")

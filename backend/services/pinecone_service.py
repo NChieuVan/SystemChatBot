@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from typing import List
 from langchain.schema import Document
 from langchain_pinecone import PineconeVectorStore
+from openAI import embedding_model
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -124,20 +125,6 @@ def load_vectors(index_name: str, model_embedding) -> PineconeVectorStore:
         print("Error loading vectors from Pinecone index:", e)
         raise Exception(str(e))
     
-def retrieve_documents(index_name: str, model_embedding, top_k: int = 5) -> List[Document]:
-    """
-    - Args:
-        index_name (str): Name of the Pinecone index.
-        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
-        top_k (int): Number of top similar documents to retrieve.
-    """
-    try:
-        vector_store = load_vectors(index_name, model_embedding)
-        similar_docs = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
-        return similar_docs
-    except Exception as e:
-        print("Error retrieving similar documents from Pinecone index:", e)
-        raise Exception(str(e))
     
 def add_more_documents(index_name: str, documents: List[Document], model_embedding) -> dict:
     """
@@ -185,3 +172,47 @@ def delete_vectors_by_ids(index_name: str, ids: List[str]) -> dict:
     except Exception as e:
         print("Error deleting vectors from Pinecone index:", e)
         return {"status": "error", "error": str(e)}
+
+
+def retrieve_documents(index_name: str, model_embedding, top_k: int = 5) -> List[Document]:
+    """
+    - Args:
+        index_name (str): Name of the Pinecone index.
+        model_embedding: Embedding model with an 'embed_documents' method. ex: OpenAIEmbeddings(), HuggingFaceEmbeddings()
+        top_k (int): Number of top similar documents to retrieve.
+    """
+    try:
+        vector_store = load_vectors(index_name, model_embedding)
+        similar_docs = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
+        return similar_docs
+    except Exception as e:
+        print("Error retrieving similar documents from Pinecone index:", e)
+        raise Exception(str(e))
+
+# Retrieve vectors from Pinecone indexs,
+# Conection indexs, 
+def retrieve_with_query(index_name: str,query:str,) -> List[Document]:
+    """
+    using Pinecone to retrieve vectors from multiple indexs.
+    langchain_pinecone import PineconeVectorStore.
+    - Args:
+        index_name (str): List of Pinecone index names.
+        query (str): The query string to search for.
+    - Returns:
+        List[Document]: List of retrieved Document objects.
+    """
+    if index_name is None or len(index_name.strip()) == 0:
+        return []
+    if len(query.strip()) == 0:
+        return []
+    try:
+        all_documents = []
+        vector_store = load_vectors(index_name, model_embedding=embedding_model) # return PineconeVectorStore with connect index_name
+        retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+        docs = retriever.invoke(query)
+        all_documents.extend(docs)
+        return all_documents
+    except Exception as e:
+        print("Error retrieving vectors from Pinecone indexs:", e)
+        raise Exception(str(e))
+    

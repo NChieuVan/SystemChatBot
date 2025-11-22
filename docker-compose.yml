@@ -30,6 +30,18 @@ services:
     volumes:
       - minio_data:/data
 
+  # 🚀 Redis (100MB maxmemory)
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+
 volumes:
   pgdata:
   minio_data:
+  redis_data:
